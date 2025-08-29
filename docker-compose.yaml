@@ -1,0 +1,31 @@
+services:
+  vibevoice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vibevoice:24.07-cdi
+    container_name: vibevoice-cdi
+    devices:
+      - "nvidia.com/gpu=all"
+    ipc: host
+    shm_size: "8g"
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    environment:
+      # Utility is needed for nvidia-smi; add 'compute' for CUDA.
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      # Keep model/download cache on the host
+      - ./hf_cache:/root/.cache
+    ports:
+      - "7860:7860"
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "nvidia-smi -L >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
